@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import Sidebar from './Sidebar'
 
 export default function Layout() {
   const { t, i18n } = useTranslation()
@@ -11,6 +12,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   const link = ({ isActive }) => `px-3 py-2 rounded hover:bg-brand/10 ${isActive ? 'text-brand font-semibold' : ''}`
 
@@ -18,24 +20,34 @@ export default function Layout() {
   useEffect(() => {
     const checkAdmin = async () => {
       if (!user) {
+        console.log('🔴 Aucun utilisateur connecté')
         setIsAdmin(false)
         setLoading(false)
         return
       }
 
       try {
-        console.log('Vérification admin pour:', user.id)
+        console.log('🟡 Vérification admin pour user.id:', user.id)
+        
+        // Requête SIMPLE pour vérifier le rôle
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
-          .eq('role', 'admin')
           .maybeSingle()
 
-        console.log('Résultat vérification admin:', data)
-        setIsAdmin(!!data)
+        console.log('🟢 Résultat vérification:', data)
+        console.log('🔴 Erreur:', error)
+
+        if (data && data.role === 'admin') {
+          console.log('✅ Utilisateur est ADMIN !')
+          setIsAdmin(true)
+        } else {
+          console.log('❌ Utilisateur n\'est pas admin')
+          setIsAdmin(false)
+        }
       } catch (error) {
-        console.error('Erreur vérification admin:', error)
+        console.error('❌ Erreur vérification admin:', error)
         setIsAdmin(false)
       } finally {
         setLoading(false)
@@ -45,6 +57,57 @@ export default function Layout() {
     checkAdmin()
   }, [user])
 
+  // Vérifier si on est sur une route admin
+  const isAdminRoute = window.location.pathname.startsWith('/admin')
+
+  // Si l'utilisateur est sur une page admin ET est admin
+  if (isAdminRoute && user && isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        
+        <div className="flex-1 flex flex-col min-h-screen">
+          {/* Header admin */}
+          <header className="bg-white shadow-sm sticky top-0 z-30">
+            <div className="flex items-center justify-between p-4 lg:p-5">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <h1 className="text-xl font-bold text-brand">⚡ Administration</h1>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600 hidden md:block">
+                  {user?.email}
+                </span>
+                <button
+                  onClick={() => {
+                    signOut()
+                    navigate('/')
+                  }}
+                  className="text-sm text-red-600 hover:text-red-800"
+                >
+                  Déconnexion
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1 p-4 lg:p-6">
+            <Outlet />
+          </main>
+        </div>
+      </div>
+    )
+  }
+
+  // Layout normal pour les pages publiques
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-white shadow sticky top-0 z-10">
@@ -73,8 +136,8 @@ export default function Layout() {
               {t('nav.contact')}
             </NavLink>
 
-            {/* Lien Admin - visible uniquement pour les admins */}
-            {!loading && isAdmin && (
+            {/* Lien Admin - visible UNIQUEMENT si l'utilisateur est admin */}
+            {!loading && user && isAdmin && (
               <NavLink to="/admin" className={link}>
                 ⚡ Admin
               </NavLink>

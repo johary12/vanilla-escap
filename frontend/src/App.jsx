@@ -14,9 +14,21 @@ import Register from './pages/Register.jsx'
 import Account from './pages/Account.jsx'
 import Admin from './pages/Admin.jsx'
 
+// Composants admin
+import AdminTours from './pages/Admin/AdminTours.jsx'
+import AdminBookings from './pages/Admin/AdminBookings.jsx'
+import AdminStays from './pages/Admin/AdminStays.jsx'
+import AdminBlog from './pages/Admin/AdminBlog.jsx'
+import AdminQuotes from './pages/Admin/AdminQuotes.jsx'
+import AdminContacts from './pages/Admin/AdminContacts.jsx'
+import AdminUsers from './pages/Admin/AdminUsers.jsx'
+import AdminRoles from './pages/Admin/AdminRoles.jsx'
+import AdminSettings from './pages/Admin/AdminSettings.jsx'
+
 export default function App() {
   return (
     <Routes>
+      {/* Routes publiques */}
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/tours" element={<Tours />} />
@@ -29,7 +41,18 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/account" element={<Account />} />
+        
+        {/* Routes admin */}
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/tours" element={<AdminTours />} />
+        <Route path="/admin/bookings" element={<AdminBookings />} />
+        <Route path="/admin/stays" element={<AdminStays />} />
+        <Route path="/admin/blog" element={<AdminBlog />} />
+        <Route path="/admin/quotes" element={<AdminQuotes />} />
+        <Route path="/admin/contacts" element={<AdminContacts />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/roles" element={<AdminRoles />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
       </Route>
     </Routes>
   )
