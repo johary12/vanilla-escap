@@ -25,6 +25,10 @@ import AdminUsers from './pages/Admin/AdminUsers.jsx'
 import AdminRoles from './pages/Admin/AdminRoles.jsx'
 import AdminSettings from './pages/Admin/AdminSettings.jsx'
 
+
+import AuthCallback from './pages/AuthCallback.jsx'
+
+
 export default function App() {
   return (
     <Routes>
@@ -41,7 +45,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/account" element={<Account />} />
-        
+        <Route path="/auth/callback" element={<AuthCallback />} />
         {/* Routes admin */}
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/tours" element={<AdminTours />} />
