@@ -1,0 +1,9 @@
+{
+  "nav": { "home":"Accueil","tours":"Circuits","stays":"Hébergements","blog":"Blog","about":"À propos","contact":"Contact","login":"Connexion","account":"Mon compte","logout":"Déconnexion" },
+  "home": { "hero_title":"Découvrez Madagascar autrement","hero_subtitle":"Circuits sur mesure, biodiversité, plages et aventure","cta":"Voir nos circuits" },
+  "tours": { "title":"Nos circuits","filter_region":"Région","all":"Toutes","from":"À partir de","days":"jours","book":"Réserver","details":"Détails" },
+  "booking": { "title":"Réserver","name":"Nom","email":"Email","phone":"Téléphone","participants":"Participants","date":"Date de départ","submit":"Envoyer la réservation","success":"Réservation enregistrée !" },
+  "quote": { "title":"Demander un devis","trip_type":"Type de séjour","message":"Message","submit":"Envoyer","success":"Demande envoyée" },
+  "contact": { "title":"Contactez-nous","subject":"Sujet","message":"Message","submit":"Envoyer","success":"Message envoyé" },
+  "auth": { "login":"Connexion","register":"S'inscrire","email":"Email","password":"Mot de passe","full_name":"Nom complet" }
+}

@@ -1,0 +1,9 @@
+{
+  "nav": { "home":"Home","tours":"Tours","stays":"Stays","blog":"Blog","about":"About","contact":"Contact","login":"Log in","account":"My account","logout":"Log out" },
+  "home": { "hero_title":"Discover Madagascar, differently","hero_subtitle":"Tailor-made tours, biodiversity, beaches and adventure","cta":"See our tours" },
+  "tours": { "title":"Our tours","filter_region":"Region","all":"All","from":"From","days":"days","book":"Book","details":"Details" },
+  "booking": { "title":"Book","name":"Name","email":"Email","phone":"Phone","participants":"Participants","date":"Departure date","submit":"Send booking","success":"Booking saved!" },
+  "quote": { "title":"Request a quote","trip_type":"Trip type","message":"Message","submit":"Send","success":"Request sent" },
+  "contact": { "title":"Contact us","subject":"Subject","message":"Message","submit":"Send","success":"Message sent" },
+  "auth": { "login":"Log in","register":"Sign up","email":"Email","password":"Password","full_name":"Full name" }
+}
