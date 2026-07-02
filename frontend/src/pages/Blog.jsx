@@ -11,16 +11,13 @@ import {
   Search,
   BookOpen,
   TrendingUp,
-  ArrowRight,
-  User,
-  Eye,
-  Heart,
-  MessageCircle,
-  Share2
+  ArrowRight
 } from 'lucide-react'
+import { useTheme } from '../components/ThemeProvider'
 
 export default function Blog() {
   const { i18n, t } = useTranslation()
+  const { theme } = useTheme()
   const lang = i18n.language.startsWith('en') ? 'en' : 'fr'
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,7 +32,6 @@ export default function Blog() {
       setError(null)
       
       try {
-        // Récupérer les articles publiés depuis Supabase
         const { data, error } = await supabase
           .from('blog_posts')
           .select('*')
@@ -50,7 +46,6 @@ export default function Blog() {
           console.log('Articles chargés:', data?.length || 0)
           setPosts(data || [])
           
-          // Sélectionner le premier article comme article vedette
           if (data && data.length > 0) {
             setFeaturedPost(data[0])
           }
@@ -67,10 +62,8 @@ export default function Blog() {
     fetchPosts()
   }, [])
 
-  // Extraire les catégories uniques des articles (basé sur les données existantes)
   const categories = ['all', ...new Set(posts.map(p => p.category || 'Voyage').filter(Boolean))]
 
-  // Filtrer les articles
   const filteredPosts = posts.filter(post => {
     const title = post[`title_${lang}`] || post.title_fr || post.title_en || ''
     const content = post[`content_${lang}`] || post.content_fr || post.content_en || ''
@@ -86,10 +79,8 @@ export default function Blog() {
     return matchesSearch && matchesCategory
   })
 
-  // Articles populaires (les 3 premiers)
   const popularPosts = posts.slice(0, 3)
 
-  // Formater la date
   const formatDate = (dateString) => {
     if (!dateString) return ''
     try {
@@ -104,7 +95,6 @@ export default function Blog() {
     }
   }
 
-  // Temps de lecture estimé
   const getReadTime = (content) => {
     if (!content) return '2 min'
     const words = content.split(/\s+/).length
@@ -112,17 +102,14 @@ export default function Blog() {
     return `${minutes} min`
   }
 
-  // Récupérer le titre selon la langue
   const getTitle = (post) => {
     return post[`title_${lang}`] || post.title_fr || post.title_en || 'Sans titre'
   }
 
-  // Récupérer le contenu selon la langue
   const getContent = (post) => {
     return post[`content_${lang}`] || post.content_fr || post.content_en || ''
   }
 
-  // Récupérer l'extrait selon la langue
   const getExcerpt = (post) => {
     return post[`excerpt_${lang}`] || post.excerpt_fr || post.excerpt_en || ''
   }
@@ -130,8 +117,8 @@ export default function Blog() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-brand"></div>
-        <p className="mt-4 text-gray-500">Chargement des articles...</p>
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-brand dark:border-brand-light"></div>
+        <p className="mt-4 text-gray-500 dark:text-gray-400">Chargement des articles...</p>
       </div>
     )
   }
@@ -141,15 +128,17 @@ export default function Blog() {
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <div className="text-red-600 text-6xl mb-4">😕</div>
         <p className="text-red-600 text-lg font-medium">{error}</p>
-        <p className="text-gray-500 mt-2">Veuillez réessayer plus tard</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-2">Veuillez réessayer plus tard</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      theme === 'dark' ? 'bg-dark-bg' : 'bg-slate-50'
+    }`}>
       {/* ==================== EN-TÊTE ==================== */}
-      <section className="relative bg-gradient-to-br from-brand-dark via-brand to-brand-light py-16 px-4 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-brand-dark via-brand to-brand-light dark:from-slate-900 dark:via-slate-800 dark:to-slate-700 py-16 px-4 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl" />
@@ -168,7 +157,6 @@ export default function Blog() {
               Découvrez nos conseils, récits et guides pour voyager à Madagascar
             </p>
             
-            {/* Barre de recherche */}
             <div className="mt-8 max-w-md mx-auto">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -189,18 +177,20 @@ export default function Blog() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* ==================== ARTICLES PRINCIPAUX ==================== */}
           <div className="lg:col-span-2">
-            {/* Nombre d'articles trouvés */}
             <div className="mb-6">
-              <p className="text-sm text-gray-500">
+              <p className={`text-sm ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 {filteredPosts.length} article{filteredPosts.length > 1 ? 's' : ''} trouvé{filteredPosts.length > 1 ? 's' : ''}
               </p>
             </div>
 
-            {/* Article vedette */}
             {featuredPost && (
               <div className="mb-8">
                 <Link to={`/blog/${featuredPost.slug || featuredPost.id}`} className="group block">
-                  <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1">
+                  <div className={`rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1 ${
+                    theme === 'dark' ? 'bg-dark-card' : 'bg-white'
+                  }`}>
                     {featuredPost.featured_image && (
                       <div className="aspect-[16/9] overflow-hidden">
                         <img
@@ -211,7 +201,9 @@ export default function Blog() {
                       </div>
                     )}
                     <div className="p-6">
-                      <div className="flex items-center gap-3 text-sm text-gray-500 mb-3 flex-wrap">
+                      <div className={`flex items-center gap-3 text-sm mb-3 flex-wrap ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
                         <span className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
                           {formatDate(featuredPost.published_at || featuredPost.created_at)}
@@ -221,19 +213,25 @@ export default function Blog() {
                           {getReadTime(getContent(featuredPost))}
                         </span>
                         {featuredPost.category && (
-                          <span className="flex items-center gap-1 bg-brand/10 text-brand px-2 py-0.5 rounded-full text-xs">
+                          <span className="flex items-center gap-1 bg-brand/10 text-brand dark:text-brand-light px-2 py-0.5 rounded-full text-xs">
                             <Tag className="w-3 h-3" />
                             {featuredPost.category}
                           </span>
                         )}
                       </div>
-                      <h2 className="text-2xl font-bold text-brand-dark group-hover:text-brand transition-colors">
+                      <h2 className={`text-2xl font-bold transition-colors ${
+                        theme === 'dark' 
+                          ? 'text-white group-hover:text-brand-light' 
+                          : 'text-brand-dark group-hover:text-brand'
+                      }`}>
                         {getTitle(featuredPost)}
                       </h2>
-                      <p className="mt-3 text-gray-600 line-clamp-2">
+                      <p className={`mt-3 line-clamp-2 ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
                         {getExcerpt(featuredPost) || getContent(featuredPost)?.substring(0, 200) + '...'}
                       </p>
-                      <div className="mt-4 inline-flex items-center gap-2 text-brand font-medium group-hover:gap-3 transition-all">
+                      <div className="mt-4 inline-flex items-center gap-2 text-brand dark:text-brand-light font-medium group-hover:gap-3 transition-all">
                         Lire l'article
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </div>
@@ -243,12 +241,19 @@ export default function Blog() {
               </div>
             )}
 
-            {/* Grille d'articles */}
             {filteredPosts.length === 0 ? (
-              <div className="bg-white rounded-2xl p-12 text-center">
-                <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-700">Aucun article trouvé</h3>
-                <p className="text-gray-500 mt-2">Essayez de modifier votre recherche</p>
+              <div className={`rounded-2xl p-12 text-center ${
+                theme === 'dark' ? 'bg-dark-card' : 'bg-white'
+              }`}>
+                <BookOpen className={`w-16 h-16 mx-auto mb-4 ${
+                  theme === 'dark' ? 'text-gray-600' : 'text-gray-300'
+                }`} />
+                <h3 className={`text-xl font-semibold ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-700'
+                }`}>Aucun article trouvé</h3>
+                <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
+                  Essayez de modifier votre recherche
+                </p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -258,7 +263,9 @@ export default function Blog() {
                     to={`/blog/${post.slug || post.id}`} 
                     className="group block"
                   >
-                    <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1 flex flex-col md:flex-row">
+                    <article className={`rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1 flex flex-col md:flex-row ${
+                      theme === 'dark' ? 'bg-dark-card' : 'bg-white'
+                    }`}>
                       {post.featured_image && (
                         <div className="md:w-72 h-48 md:h-auto overflow-hidden flex-shrink-0">
                           <img
@@ -269,7 +276,9 @@ export default function Blog() {
                         </div>
                       )}
                       <div className="flex-1 p-6">
-                        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-3">
+                        <div className={`flex flex-wrap items-center gap-3 text-sm mb-3 ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
                           <span className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
                             {formatDate(post.published_at || post.created_at)}
@@ -279,19 +288,25 @@ export default function Blog() {
                             {getReadTime(getContent(post))}
                           </span>
                           {post.category && (
-                            <span className="flex items-center gap-1 bg-brand/10 text-brand px-2 py-0.5 rounded-full text-xs">
+                            <span className="flex items-center gap-1 bg-brand/10 text-brand dark:text-brand-light px-2 py-0.5 rounded-full text-xs">
                               <Tag className="w-3 h-3" />
                               {post.category}
                             </span>
                           )}
                         </div>
-                        <h3 className="text-xl font-bold text-brand-dark group-hover:text-brand transition-colors line-clamp-2">
+                        <h3 className={`text-xl font-bold transition-colors line-clamp-2 ${
+                          theme === 'dark' 
+                            ? 'text-white group-hover:text-brand-light' 
+                            : 'text-brand-dark group-hover:text-brand'
+                        }`}>
                           {getTitle(post)}
                         </h3>
-                        <p className="mt-2 text-gray-600 line-clamp-2">
+                        <p className={`mt-2 line-clamp-2 ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
                           {getExcerpt(post) || getContent(post)?.substring(0, 150) + '...'}
                         </p>
-                        <div className="mt-4 inline-flex items-center gap-2 text-brand font-medium group-hover:gap-3 transition-all text-sm">
+                        <div className="mt-4 inline-flex items-center gap-2 text-brand dark:text-brand-light font-medium group-hover:gap-3 transition-all text-sm">
                           Lire l'article
                           <ChevronRight className="w-4 h-4" />
                         </div>
@@ -306,9 +321,13 @@ export default function Blog() {
           {/* ==================== SIDEBAR ==================== */}
           <div className="space-y-6">
             {/* Catégories */}
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <h3 className="text-lg font-bold text-brand-dark mb-4 flex items-center gap-2">
-                <Tag className="w-5 h-5 text-brand" />
+            <div className={`rounded-2xl shadow-sm p-6 ${
+              theme === 'dark' ? 'bg-dark-card' : 'bg-white'
+            }`}>
+              <h3 className={`text-lg font-bold mb-4 flex items-center gap-2 ${
+                theme === 'dark' ? 'text-white' : 'text-brand-dark'
+              }`}>
+                <Tag className="w-5 h-5 text-brand dark:text-brand-light" />
                 Catégories
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -319,7 +338,9 @@ export default function Blog() {
                     className={`px-3 py-1.5 rounded-full text-sm transition-all ${
                       selectedCategory === category
                         ? 'bg-brand text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        : theme === 'dark'
+                          ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
                     {category === 'all' ? 'Tous' : category}
@@ -330,9 +351,13 @@ export default function Blog() {
 
             {/* Articles populaires */}
             {popularPosts.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm p-6">
-                <h3 className="text-lg font-bold text-brand-dark mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-brand" />
+              <div className={`rounded-2xl shadow-sm p-6 ${
+                theme === 'dark' ? 'bg-dark-card' : 'bg-white'
+              }`}>
+                <h3 className={`text-lg font-bold mb-4 flex items-center gap-2 ${
+                  theme === 'dark' ? 'text-white' : 'text-brand-dark'
+                }`}>
+                  <TrendingUp className="w-5 h-5 text-brand dark:text-brand-light" />
                   À la une
                 </h3>
                 <div className="space-y-4">
@@ -340,7 +365,9 @@ export default function Blog() {
                     <Link
                       key={post.id}
                       to={`/blog/${post.slug || post.id}`}
-                      className="group flex gap-3 hover:bg-slate-50 p-2 rounded-xl transition"
+                      className={`group flex gap-3 p-2 rounded-xl transition ${
+                        theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-slate-50'
+                      }`}
                     >
                       {post.featured_image && (
                         <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
@@ -352,10 +379,16 @@ export default function Blog() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-gray-800 group-hover:text-brand transition line-clamp-2">
+                        <h4 className={`text-sm font-semibold transition line-clamp-2 ${
+                          theme === 'dark' 
+                            ? 'text-white group-hover:text-brand-light' 
+                            : 'text-gray-800 group-hover:text-brand'
+                        }`}>
                           {getTitle(post)}
                         </h4>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className={`text-xs mt-1 ${
+                          theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                        }`}>
                           {formatDate(post.published_at || post.created_at)}
                         </p>
                       </div>
@@ -366,21 +399,23 @@ export default function Blog() {
             )}
 
             {/* Statistiques */}
-            <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className={`rounded-2xl shadow-sm p-6 ${
+              theme === 'dark' ? 'bg-dark-card' : 'bg-white'
+            }`}>
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
-                  <p className="text-2xl font-bold text-brand">{posts.length}</p>
-                  <p className="text-xs text-gray-500">Articles</p>
+                  <p className="text-2xl font-bold text-brand dark:text-brand-light">{posts.length}</p>
+                  <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Articles</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-brand">4.9</p>
-                  <p className="text-xs text-gray-500">Note moyenne</p>
+                  <p className="text-2xl font-bold text-brand dark:text-brand-light">4.9</p>
+                  <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Note moyenne</p>
                 </div>
               </div>
             </div>
 
             {/* Newsletter */}
-            <div className="bg-gradient-to-br from-brand to-brand-dark rounded-2xl shadow-sm p-6 text-white">
+            <div className="bg-gradient-to-br from-brand to-brand-dark dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-sm p-6 text-white">
               <h3 className="text-lg font-bold mb-2">📬 Newsletter</h3>
               <p className="text-sm text-white/70 mb-4">
                 Recevez nos derniers articles directement dans votre boîte mail
@@ -401,17 +436,21 @@ export default function Blog() {
       </div>
 
       {/* ==================== CTA ==================== */}
-      <section className="bg-white py-12 px-4 border-t border-slate-100">
+      <section className={`py-12 px-4 border-t transition-colors duration-300 ${
+        theme === 'dark' ? 'bg-dark-card border-dark-border' : 'bg-white border-slate-100'
+      }`}>
         <div className="max-w-4xl mx-auto text-center">
-          <h3 className="text-2xl font-bold text-brand-dark mb-3">
+          <h3 className={`text-2xl font-bold mb-3 ${
+            theme === 'dark' ? 'text-white' : 'text-brand-dark'
+          }`}>
             Vous avez aimé nos articles ?
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
             Découvrez nos circuits et partez à l'aventure à Madagascar
           </p>
           <Link
             to="/tours"
-            className="inline-flex items-center gap-2 bg-brand hover:bg-brand-dark text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:-translate-y-1"
+            className="inline-flex items-center gap-2 bg-brand hover:bg-brand-dark text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 mt-4"
           >
             Voir nos circuits
             <ChevronRight className="w-5 h-5" />

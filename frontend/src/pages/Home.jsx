@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { 
   ArrowRight, 
-  Globe, 
   Users, 
   Compass, 
   MapPin, 
@@ -11,19 +10,19 @@ import {
   Award, 
   ChevronRight,
   Star,
-  Camera,
   Sun,
   Mountain,
   TreePalm,
   Ship,
-  Coffee,
   Sparkles,
   Play,
   Heart,
   Shield,
-  Headphones
+  Headphones,
+  Leaf
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
+import { useTheme } from '../components/ThemeProvider'
 
 // Images pour le hero
 const heroImages = [
@@ -41,8 +40,8 @@ const tourImages = {
 
 export default function Home() {
   const { t } = useTranslation()
+  const { theme } = useTheme()
   const [currentImage, setCurrentImage] = useState(0)
-  const [isVisible, setIsVisible] = useState(false)
   const [activeTestimonial, setActiveTestimonial] = useState(0)
   const statsRef = useRef(null)
   const [statsVisible, setStatsVisible] = useState(false)
@@ -147,7 +146,7 @@ export default function Home() {
   ]
 
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-hidden bg-white dark:bg-dark-bg transition-colors duration-300">
       {/* ==================== HERO SECTION ==================== */}
       <section className="relative min-h-[85vh] flex items-center overflow-hidden">
         {/* Carrousel d'images */}
@@ -159,7 +158,7 @@ export default function Home() {
                 index === currentImage ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              <div className="absolute inset-0 bg-black/40 z-10" />
+              <div className="absolute inset-0 bg-black/50 z-10" />
               <img
                 src={img}
                 alt={`Madagascar ${index + 1}`}
@@ -254,16 +253,16 @@ export default function Home() {
       </section>
 
       {/* ==================== FEATURES ==================== */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-20 px-4 bg-white dark:bg-dark-bg transition-colors duration-300">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <span className="inline-block px-4 py-1.5 text-sm font-semibold text-brand bg-brand/10 rounded-full mb-4">
+            <span className="inline-block px-4 py-1.5 text-sm font-semibold text-brand bg-brand/10 dark:bg-brand/20 rounded-full mb-4">
               Pourquoi choisir Vanilla Escape
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark">
+            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark dark:text-white">
               Voyagez autrement avec nous
             </h2>
-            <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+            <p className="mt-4 text-lg text-slate-600 dark:text-gray-400 max-w-2xl mx-auto">
               Des expériences uniques au cœur de Madagascar, conçues avec passion et respect de l'environnement
             </p>
           </div>
@@ -274,33 +273,30 @@ export default function Home() {
                 icon: Compass,
                 title: 'Circuits sur mesure',
                 description: 'Des itinéraires personnalisés adaptés à vos envies et à votre budget',
-                color: 'from-blue-500 to-blue-600',
-                bg: 'bg-blue-50'
+                bg: 'bg-blue-50 dark:bg-blue-900/20'
               },
               {
-                icon: Users,
-                title: 'Guides locaux experts',
-                description: 'Des passionnés qui vous feront découvrir les secrets de leur île',
-                color: 'from-green-500 to-green-600',
-                bg: 'bg-green-50'
+                icon: Leaf,
+                title: 'Éco-responsable',
+                description: 'Un engagement fort pour préserver la biodiversité et les communautés locales',
+                bg: 'bg-green-50 dark:bg-green-900/20'
               },
               {
                 icon: Heart,
-                title: 'Tourisme responsable',
-                description: 'Un engagement fort pour préserver la biodiversité et les communautés locales',
-                color: 'from-red-500 to-red-600',
-                bg: 'bg-red-50'
+                title: 'Tourisme solidaire',
+                description: 'Nous soutenons les communautés locales pour un tourisme équitable',
+                bg: 'bg-red-50 dark:bg-red-900/20'
               }
             ].map((feature, index) => (
               <div
                 key={index}
-                className="group p-8 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2"
+                className="group p-8 rounded-2xl bg-white dark:bg-dark-card border border-slate-100 dark:border-dark-border shadow-sm hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-black/30 transition-all duration-500 hover:-translate-y-2"
               >
-                <div className={`inline-flex p-4 rounded-xl ${feature.bg} text-brand group-hover:scale-110 transition-transform duration-300 mb-5`}>
+                <div className={`inline-flex p-4 rounded-xl ${feature.bg} text-brand dark:text-brand-light group-hover:scale-110 transition-transform duration-300 mb-5`}>
                   <feature.icon className="w-7 h-7" />
                 </div>
-                <h3 className="text-xl font-bold text-brand-dark mb-3">{feature.title}</h3>
-                <p className="text-slate-600 leading-relaxed">{feature.description}</p>
+                <h3 className="text-xl font-bold text-brand-dark dark:text-white mb-3">{feature.title}</h3>
+                <p className="text-slate-600 dark:text-gray-400 leading-relaxed">{feature.description}</p>
                 <div className="mt-4 w-12 h-0.5 bg-brand/30 group-hover:w-20 transition-all duration-300" />
               </div>
             ))}
@@ -309,20 +305,20 @@ export default function Home() {
       </section>
 
       {/* ==================== POPULAR TOURS ==================== */}
-      <section className="py-20 px-4 bg-slate-50">
+      <section className="py-20 px-4 bg-slate-50 dark:bg-slate-900/50 transition-colors duration-300">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-12">
             <div>
-              <span className="inline-block px-4 py-1.5 text-sm font-semibold text-brand bg-brand/10 rounded-full mb-3">
+              <span className="inline-block px-4 py-1.5 text-sm font-semibold text-brand bg-brand/10 dark:bg-brand/20 rounded-full mb-3">
                 Nos circuits
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-brand-dark">
+              <h2 className="text-3xl md:text-4xl font-bold text-brand-dark dark:text-white">
                 Circuits populaires
               </h2>
             </div>
             <Link
               to="/tours"
-              className="inline-flex items-center gap-2 text-brand font-semibold hover:gap-3 transition-all"
+              className="inline-flex items-center gap-2 text-brand dark:text-brand-light font-semibold hover:gap-3 transition-all"
             >
               Voir tous les circuits
               <ChevronRight className="w-4 h-4" />
@@ -333,7 +329,7 @@ export default function Home() {
             {popularTours.map((tour, index) => (
               <div
                 key={tour.id}
-                className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
+                className="group bg-white dark:bg-dark-card rounded-2xl overflow-hidden shadow-sm dark:shadow-black/20 hover:shadow-2xl dark:hover:shadow-2xl dark:hover:shadow-black/40 transition-all duration-500 hover:-translate-y-2"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="relative overflow-hidden aspect-[4/3]">
@@ -342,10 +338,10 @@ export default function Home() {
                     alt={tour.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
-                  <div className="absolute top-4 left-4 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium">
+                  <div className="absolute top-4 left-4 flex items-center gap-1 bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium dark:text-white">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                     {tour.rating}
-                    <span className="text-slate-400 text-xs ml-1">({tour.reviews})</span>
+                    <span className="text-slate-400 dark:text-gray-500 text-xs ml-1">({tour.reviews})</span>
                   </div>
                   <div className="absolute top-4 right-4 bg-brand text-white px-3 py-1.5 rounded-full text-sm font-semibold">
                     {tour.price}
@@ -353,15 +349,15 @@ export default function Home() {
                 </div>
 
                 <div className="p-6">
-                  <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
+                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-400 mb-2">
                     <MapPin className="w-4 h-4" />
                     <span>{tour.region}</span>
-                    <span className="w-1 h-1 rounded-full bg-slate-300" />
+                    <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-gray-600" />
                     <Clock className="w-4 h-4" />
                     <span>{tour.duration}</span>
                   </div>
 
-                  <h3 className="text-xl font-bold text-brand-dark mb-2 group-hover:text-brand transition-colors">
+                  <h3 className="text-xl font-bold text-brand-dark dark:text-white mb-2 group-hover:text-brand dark:group-hover:text-brand-light transition-colors">
                     {tour.title}
                   </h3>
 
@@ -369,7 +365,7 @@ export default function Home() {
                     {tour.features.map((feature) => (
                       <span
                         key={feature}
-                        className="px-2 py-1 bg-slate-100 text-slate-600 rounded-full text-xs"
+                        className="px-2 py-1 bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-400 rounded-full text-xs"
                       >
                         {feature}
                       </span>
@@ -378,7 +374,7 @@ export default function Home() {
 
                   <Link
                     to={tour.link}
-                    className="inline-flex items-center gap-2 mt-5 text-brand font-semibold hover:gap-3 transition-all group-hover:text-brand-dark"
+                    className="inline-flex items-center gap-2 mt-5 text-brand dark:text-brand-light font-semibold hover:gap-3 transition-all group-hover:text-brand-dark dark:group-hover:text-white"
                   >
                     Découvrir
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -391,13 +387,13 @@ export default function Home() {
       </section>
 
       {/* ==================== DESTINATIONS ==================== */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-20 px-4 bg-white dark:bg-dark-bg transition-colors duration-300">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <span className="inline-block px-4 py-1.5 text-sm font-semibold text-brand bg-brand/10 rounded-full mb-3">
+            <span className="inline-block px-4 py-1.5 text-sm font-semibold text-brand bg-brand/10 dark:bg-brand/20 rounded-full mb-3">
               Explorez Madagascar
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark">
+            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark dark:text-white">
               Destinations incontournables
             </h2>
           </div>
@@ -426,7 +422,7 @@ export default function Home() {
       </section>
 
       {/* ==================== STATISTICS ==================== */}
-      <section ref={statsRef} className="py-16 px-4 bg-brand-dark text-white">
+      <section ref={statsRef} className="py-16 px-4 bg-brand-dark dark:bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
@@ -453,19 +449,19 @@ export default function Home() {
       </section>
 
       {/* ==================== TESTIMONIALS ==================== */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-20 px-4 bg-white dark:bg-dark-bg transition-colors duration-300">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <span className="inline-block px-4 py-1.5 text-sm font-semibold text-brand bg-brand/10 rounded-full mb-3">
+            <span className="inline-block px-4 py-1.5 text-sm font-semibold text-brand bg-brand/10 dark:bg-brand/20 rounded-full mb-3">
               Témoignages
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark">
+            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark dark:text-white">
               Ce que disent nos voyageurs
             </h2>
           </div>
 
           <div className="relative">
-            <div className="bg-slate-50 rounded-2xl p-8 md:p-12">
+            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-8 md:p-12 transition-colors duration-300">
               <div className="flex items-center gap-4 mb-6">
                 <img
                   src={testimonials[activeTestimonial].avatar}
@@ -473,10 +469,10 @@ export default function Home() {
                   className="w-16 h-16 rounded-full object-cover border-2 border-brand"
                 />
                 <div>
-                  <h4 className="font-bold text-brand-dark">
+                  <h4 className="font-bold text-brand-dark dark:text-white">
                     {testimonials[activeTestimonial].name}
                   </h4>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-500 dark:text-gray-400">
                     {testimonials[activeTestimonial].country}
                   </p>
                   <div className="flex items-center gap-0.5 mt-1">
@@ -487,11 +483,11 @@ export default function Home() {
                 </div>
               </div>
 
-              <p className="text-lg text-slate-700 leading-relaxed italic">
+              <p className="text-lg text-slate-700 dark:text-gray-300 leading-relaxed italic">
                 "{testimonials[activeTestimonial].text}"
               </p>
 
-              <p className="mt-4 text-sm text-brand font-medium">
+              <p className="mt-4 text-sm text-brand dark:text-brand-light font-medium">
                 Circuit : {testimonials[activeTestimonial].tour}
               </p>
 
@@ -503,7 +499,7 @@ export default function Home() {
                     className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
                       index === activeTestimonial
                         ? 'w-8 bg-brand'
-                        : 'bg-slate-300 hover:bg-slate-400'
+                        : 'bg-slate-300 dark:bg-gray-600 hover:bg-slate-400 dark:hover:bg-gray-500'
                     }`}
                     aria-label={`Témoignage ${index + 1}`}
                   />
@@ -515,20 +511,20 @@ export default function Home() {
       </section>
 
       {/* ==================== BLOG PREVIEW ==================== */}
-      <section className="py-20 px-4 bg-slate-50">
+      <section className="py-20 px-4 bg-slate-50 dark:bg-slate-900/50 transition-colors duration-300">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-12">
             <div>
-              <span className="inline-block px-4 py-1.5 text-sm font-semibold text-brand bg-brand/10 rounded-full mb-3">
+              <span className="inline-block px-4 py-1.5 text-sm font-semibold text-brand bg-brand/10 dark:bg-brand/20 rounded-full mb-3">
                 Blog
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-brand-dark">
+              <h2 className="text-3xl md:text-4xl font-bold text-brand-dark dark:text-white">
                 Derniers articles
               </h2>
             </div>
             <Link
               to="/blog"
-              className="inline-flex items-center gap-2 text-brand font-semibold hover:gap-3 transition-all"
+              className="inline-flex items-center gap-2 text-brand dark:text-brand-light font-semibold hover:gap-3 transition-all"
             >
               Voir tout
               <ChevronRight className="w-4 h-4" />
@@ -562,7 +558,7 @@ export default function Home() {
               <Link
                 key={index}
                 to={`/blog/${index + 1}`}
-                className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2"
+                className="group bg-white dark:bg-dark-card rounded-2xl overflow-hidden shadow-sm dark:shadow-black/20 hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-black/40 transition-all duration-500 hover:-translate-y-2"
               >
                 <div className="overflow-hidden aspect-[16/9]">
                   <img
@@ -572,15 +568,15 @@ export default function Home() {
                   />
                 </div>
                 <div className="p-6">
-                  <div className="flex items-center gap-4 text-xs text-slate-400 mb-3">
+                  <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-gray-500 mb-3">
                     <span>{post.date}</span>
                     <span>•</span>
                     <span>{post.readTime} de lecture</span>
                   </div>
-                  <h3 className="text-lg font-bold text-brand-dark group-hover:text-brand transition-colors">
+                  <h3 className="text-lg font-bold text-brand-dark dark:text-white group-hover:text-brand dark:group-hover:text-brand-light transition-colors">
                     {post.title}
                   </h3>
-                  <p className="mt-2 text-slate-600 text-sm">{post.excerpt}</p>
+                  <p className="mt-2 text-slate-600 dark:text-gray-400 text-sm">{post.excerpt}</p>
                 </div>
               </Link>
             ))}
@@ -589,7 +585,7 @@ export default function Home() {
       </section>
 
       {/* ==================== CTA FINAL ==================== */}
-      <section className="py-20 px-4 bg-gradient-to-r from-brand to-brand-dark text-white">
+      <section className="py-20 px-4 bg-gradient-to-r from-brand to-brand-dark dark:from-slate-800 dark:to-slate-900 text-white">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex p-4 rounded-full bg-white/10 backdrop-blur-sm mb-6">
             <Compass className="w-10 h-10" />
@@ -603,7 +599,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/tours"
-              className="inline-flex items-center justify-center gap-2 bg-white text-brand-dark px-10 py-4 rounded-xl font-semibold hover:bg-slate-100 transition-all duration-300 shadow-lg hover:shadow-2xl hover:-translate-y-1"
+              className="inline-flex items-center justify-center gap-2 bg-white text-brand-dark dark:text-slate-800 px-10 py-4 rounded-xl font-semibold hover:bg-slate-100 transition-all duration-300 shadow-lg hover:shadow-2xl hover:-translate-y-1"
             >
               Découvrir nos circuits
               <ArrowRight className="w-5 h-5" />

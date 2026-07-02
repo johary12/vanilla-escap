@@ -1,9 +1,9 @@
 // src/pages/Admin.jsx
 import { useEffect, useState } from 'react'
 import { Navigate, Link } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
-import { supabase } from '../lib/supabase'
-import { useTheme } from '../components/ThemeProvider'
+import { useAuth } from '../../hooks/useAuth'
+import { supabase } from '../../lib/supabase'
+import { useTheme } from '../../components/ThemeProvider'
 import { 
   LayoutDashboard, 
   Calendar, 

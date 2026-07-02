@@ -12,9 +12,13 @@ import Quote from './pages/Quote.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Account from './pages/Account.jsx'
-import Admin from './pages/Admin.jsx'
+import AuthCallback from './pages/AuthCallback.jsx'
+
+// Layout admin
+import AdminLayout from './layouts/AdminLayout'
 
 // Composants admin
+import AdminDashboard from './pages/Admin/AdminDashboard.jsx' // À créer si nécessaire
 import AdminTours from './pages/Admin/AdminTours.jsx'
 import AdminBookings from './pages/Admin/AdminBookings.jsx'
 import AdminStays from './pages/Admin/AdminStays.jsx'
@@ -25,14 +29,10 @@ import AdminUsers from './pages/Admin/AdminUsers.jsx'
 import AdminRoles from './pages/Admin/AdminRoles.jsx'
 import AdminSettings from './pages/Admin/AdminSettings.jsx'
 
-
-import AuthCallback from './pages/AuthCallback.jsx'
-
-
 export default function App() {
   return (
     <Routes>
-      {/* Routes publiques */}
+      {/* Routes publiques avec Layout */}
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/tours" element={<Tours />} />
@@ -46,17 +46,20 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/account" element={<Account />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        {/* Routes admin */}
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/admin/tours" element={<AdminTours />} />
-        <Route path="/admin/bookings" element={<AdminBookings />} />
-        <Route path="/admin/stays" element={<AdminStays />} />
-        <Route path="/admin/blog" element={<AdminBlog />} />
-        <Route path="/admin/quotes" element={<AdminQuotes />} />
-        <Route path="/admin/contacts" element={<AdminContacts />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
-        <Route path="/admin/roles" element={<AdminRoles />} />
-        <Route path="/admin/settings" element={<AdminSettings />} />
+      </Route>
+
+      {/* Routes admin avec AdminLayout */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="tours" element={<AdminTours />} />
+        <Route path="bookings" element={<AdminBookings />} />
+        <Route path="stays" element={<AdminStays />} />
+        <Route path="blog" element={<AdminBlog />} />
+        <Route path="quotes" element={<AdminQuotes />} />
+        <Route path="contacts" element={<AdminContacts />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="roles" element={<AdminRoles />} />
+        <Route path="settings" element={<AdminSettings />} />
       </Route>
     </Routes>
   )
