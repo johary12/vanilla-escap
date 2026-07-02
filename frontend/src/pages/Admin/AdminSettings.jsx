@@ -11,11 +11,7 @@ import {
   Mail, 
   Phone, 
   MapPin, 
-  Facebook, 
-  Instagram, 
-  Twitter, 
-  Youtube,
-  Link,
+  Link as LinkIcon,
   FileText,
   Image,
   Layout,
@@ -24,9 +20,9 @@ import {
   CheckCircle,
   Loader2,
   XCircle,
-  Eye,
-  EyeOff,
-  HelpCircle
+  HelpCircle,
+  Bell,
+  Share2
 } from 'lucide-react'
 
 export default function AdminSettings() {
@@ -38,15 +34,15 @@ export default function AdminSettings() {
   const [settings, setSettings] = useState({
     site_name: 'Vanilla Escape',
     site_description: 'Agence réceptive à Madagascar',
-    contact_email: 'contact@vanilla-escape.com',
-    contact_phone: '+261 32 00 00 00',
-    address: 'Antananarivo, Madagascar',
-    facebook: 'https://facebook.com/vanillaescape',
-    instagram: 'https://instagram.com/vanillaescape',
+    contact_email: 'escapevanilla6@gmail.com',
+    contact_phone: '+261 38 25 955 00',
+    address: 'Lot K2-042, Ivato Aéroport, Antananarivo, Madagascar',
+    facebook: 'https://facebook.com',
+    instagram: 'https://instagram.com',
     twitter: '',
     youtube: '',
-    google_maps: '',
-    whatsapp: '+261 32 00 00 00',
+    google_maps: 'https://goo.gl/maps/...',
+    whatsapp: '+261 38 46 391 24',
     opening_hours: 'Lun-Ven: 8h-17h',
     about_text: '',
     terms_url: '',
@@ -149,15 +145,15 @@ export default function AdminSettings() {
       setSettings({
         site_name: 'Vanilla Escape',
         site_description: 'Agence réceptive à Madagascar',
-        contact_email: 'contact@vanilla-escape.com',
-        contact_phone: '+261 32 00 00 00',
-        address: 'Antananarivo, Madagascar',
-        facebook: 'https://facebook.com/vanillaescape',
-        instagram: 'https://instagram.com/vanillaescape',
+        contact_email: 'escapevanilla6@gmail.com',
+        contact_phone: '+261 38 25 955 00',
+        address: 'Lot K2-042, Ivato Aéroport, Antananarivo, Madagascar',
+        facebook: 'https://facebook.com',
+        instagram: 'https://instagram.com',
         twitter: '',
         youtube: '',
-        google_maps: '',
-        whatsapp: '+261 32 00 00 00',
+        google_maps: 'https://goo.gl/maps/...',
+        whatsapp: '+261 38 46 391 24',
         opening_hours: 'Lun-Ven: 8h-17h',
         about_text: '',
         terms_url: '',
@@ -291,8 +287,10 @@ export default function AdminSettings() {
                 } focus:ring-2 focus:ring-brand focus:border-brand`} />
             </div>
             <div>
-              <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>WhatsApp</label>
-              <input type="text" name="whatsapp" value={settings.whatsapp || ''} onChange={handleChange} placeholder="+261 32 00 00 00"
+              <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                <MessageCircle className="inline-block w-4 h-4 mr-1" /> WhatsApp
+              </label>
+              <input type="text" name="whatsapp" value={settings.whatsapp || ''} onChange={handleChange} placeholder="+261 38 46 391 24"
                 className={`w-full border rounded-lg px-3 py-2 transition-colors duration-300 ${
                   theme === 'dark' ? 'bg-gray-800 border-dark-border text-white' : 'bg-white border-gray-300 text-gray-800'
                 } focus:ring-2 focus:ring-brand focus:border-brand`} />
@@ -317,7 +315,7 @@ export default function AdminSettings() {
             </div>
             <div className="md:col-span-2">
               <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                <Link className="inline-block w-4 h-4 mr-1" /> Google Maps URL
+                <LinkIcon className="inline-block w-4 h-4 mr-1" /> Google Maps URL
               </label>
               <input type="url" name="google_maps" value={settings.google_maps || ''} onChange={handleChange} placeholder="https://goo.gl/maps/..."
                 className={`w-full border rounded-lg px-3 py-2 transition-colors duration-300 ${
@@ -327,7 +325,7 @@ export default function AdminSettings() {
           </div>
         </div>
 
-        {/* Réseaux sociaux */}
+        {/* Réseaux sociaux - Sans icônes problématiques */}
         <div className={`rounded-xl shadow-sm p-6 transition-colors duration-300 ${theme === 'dark' ? 'bg-dark-card' : 'bg-white'}`}>
           <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
             <Share2 className="w-5 h-5 text-brand" />
@@ -336,7 +334,7 @@ export default function AdminSettings() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                <Facebook className="inline-block w-4 h-4 mr-1 text-blue-600" /> Facebook
+                <span className="text-blue-600 inline-block w-5 h-5 text-center font-bold text-lg">f</span> Facebook
               </label>
               <input type="url" name="facebook" value={settings.facebook || ''} onChange={handleChange} placeholder="https://facebook.com/..."
                 className={`w-full border rounded-lg px-3 py-2 transition-colors duration-300 ${
@@ -345,7 +343,7 @@ export default function AdminSettings() {
             </div>
             <div>
               <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                <Instagram className="inline-block w-4 h-4 mr-1 text-pink-600" /> Instagram
+                <span className="text-pink-600 inline-block w-5 h-5 text-center">📸</span> Instagram
               </label>
               <input type="url" name="instagram" value={settings.instagram || ''} onChange={handleChange} placeholder="https://instagram.com/..."
                 className={`w-full border rounded-lg px-3 py-2 transition-colors duration-300 ${
@@ -354,7 +352,7 @@ export default function AdminSettings() {
             </div>
             <div>
               <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                <Twitter className="inline-block w-4 h-4 mr-1 text-blue-400" /> Twitter / X
+                <span className="text-blue-400 inline-block w-5 h-5 text-center font-bold text-lg">𝕏</span> Twitter / X
               </label>
               <input type="url" name="twitter" value={settings.twitter || ''} onChange={handleChange} placeholder="https://twitter.com/..."
                 className={`w-full border rounded-lg px-3 py-2 transition-colors duration-300 ${
@@ -363,7 +361,7 @@ export default function AdminSettings() {
             </div>
             <div>
               <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                <Youtube className="inline-block w-4 h-4 mr-1 text-red-600" /> YouTube
+                <span className="text-red-600 inline-block w-5 h-5 text-center">▶️</span> YouTube
               </label>
               <input type="url" name="youtube" value={settings.youtube || ''} onChange={handleChange} placeholder="https://youtube.com/..."
                 className={`w-full border rounded-lg px-3 py-2 transition-colors duration-300 ${
