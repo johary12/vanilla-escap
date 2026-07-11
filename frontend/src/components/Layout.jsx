@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import Sidebar from './Sidebar'
 import { useTheme } from './ThemeProvider'
+import Newsletter from './Newsletter'
 import { 
   Mail, 
   Phone, 
@@ -35,7 +36,8 @@ import {
   Globe,
   ThumbsUp,
   MapPinned,
-  ExternalLink
+  ExternalLink,
+  UserCircle
 } from 'lucide-react'
 
 export default function Layout() {
@@ -49,6 +51,7 @@ export default function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [userProfile, setUserProfile] = useState(null)
   const userMenuRef = useRef(null)
 
   const link = ({ isActive }) => 
@@ -57,6 +60,55 @@ export default function Layout() {
         ? 'text-brand font-semibold bg-brand/10 dark:bg-brand/20' 
         : 'text-gray-600 dark:text-gray-300 hover:text-brand dark:hover:text-brand-light hover:bg-brand/5 dark:hover:bg-brand/10'
     }`
+
+  // Récupérer les informations de l'utilisateur
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) {
+        setUserProfile(null)
+        return
+      }
+
+      try {
+        // Récupérer les métadonnées de l'utilisateur
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('full_name, avatar_url, created_at')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        // Si la table users n'existe pas, utiliser les métadonnées de auth
+        if (userError) {
+          // Utiliser les métadonnées de l'utilisateur auth
+          const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Utilisateur'
+          setUserProfile({
+            full_name: fullName,
+            email: user.email,
+            avatar_url: user.user_metadata?.avatar_url || null
+          })
+        } else if (userData) {
+          setUserProfile({
+            full_name: userData.full_name || user.email?.split('@')[0] || 'Utilisateur',
+            email: user.email,
+            avatar_url: userData.avatar_url || null
+          })
+        } else {
+          setUserProfile({
+            full_name: user.email?.split('@')[0] || 'Utilisateur',
+            email: user.email
+          })
+        }
+      } catch (error) {
+        console.error('Erreur chargement profil:', error)
+        setUserProfile({
+          full_name: user.email?.split('@')[0] || 'Utilisateur',
+          email: user.email
+        })
+      }
+    }
+
+    fetchUserProfile()
+  }, [user])
 
   // Vérifier si l'utilisateur est admin
   useEffect(() => {
@@ -113,6 +165,24 @@ export default function Layout() {
   // Vérifier si on est sur une route admin
   const isAdminRoute = window.location.pathname.startsWith('/admin')
 
+  // Obtenir l'initiales du nom
+  const getInitials = (name) => {
+    if (!name) return 'U'
+    const parts = name.split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+
+  // Obtenir le nom d'affichage
+  const getDisplayName = () => {
+    if (userProfile?.full_name && userProfile.full_name !== 'Utilisateur') {
+      return userProfile.full_name
+    }
+    return user?.email?.split('@')[0] || 'Utilisateur'
+  }
+
   // Si l'utilisateur est sur une page admin ET est admin
   if (isAdminRoute && user && isAdmin) {
     return (
@@ -148,12 +218,17 @@ export default function Layout() {
                     <Moon className="w-5 h-5 text-gray-600" />
                   )}
                 </button>
-                <span className="text-sm text-gray-500 dark:text-gray-400 hidden md:block">
-                  {user?.email}
-                </span>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand to-brand-dark text-white flex items-center justify-center font-semibold text-sm">
-                  {user?.email?.charAt(0).toUpperCase() || 'A'}
+                
+                {/* Affichage du nom de l'utilisateur admin */}
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand to-brand-dark text-white flex items-center justify-center font-semibold text-sm">
+                    {getInitials(getDisplayName())}
+                  </div>
+                  <span className="text-sm text-gray-700 dark:text-gray-300 hidden md:block font-medium">
+                    {getDisplayName()}
+                  </span>
                 </div>
+                
                 <button
                   onClick={() => {
                     signOut()
@@ -268,33 +343,42 @@ export default function Layout() {
                     className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
                     aria-label="Menu utilisateur"
                   >
+                    {/* Avatar avec initiales du nom */}
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand to-brand-dark text-white flex items-center justify-center font-semibold text-sm shadow-md">
-                      {user.email?.charAt(0).toUpperCase() || 'U'}
+                      {getInitials(getDisplayName())}
                     </div>
-                    <span className="hidden md:block text-sm text-gray-700 dark:text-gray-300 max-w-[120px] truncate">
-                      {user.email}
+                    <span className="hidden md:block text-sm text-gray-700 dark:text-gray-300 max-w-[150px] truncate font-medium">
+                      {getDisplayName()}
                     </span>
                     <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
                       isUserMenuOpen ? 'rotate-90' : ''
                     }`} />
                   </button>
 
+                  {/* Menu déroulant utilisateur */}
                   {isUserMenuOpen && (
                     <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-dark-card rounded-xl shadow-xl dark:shadow-2xl dark:shadow-black/30 border border-gray-100 dark:border-dark-border py-1 z-50 animate-fadeIn overflow-hidden">
                       <div className="px-4 py-4 border-b border-gray-100 dark:border-dark-border bg-gradient-to-r from-brand/5 to-transparent dark:from-brand/10">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand to-brand-dark text-white flex items-center justify-center font-semibold text-sm shadow-md">
-                            {user.email?.charAt(0).toUpperCase() || 'U'}
+                            {getInitials(getDisplayName())}
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-800 dark:text-white truncate">{user.email}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                            <p className="text-sm font-medium text-gray-800 dark:text-white truncate">
+                              {getDisplayName()}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {user.email}
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
                               Connecté
                             </p>
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Lien Mon compte - AJOUTÉ */}
                       <Link
                         to="/account"
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand/5 dark:hover:bg-brand/10 transition"
@@ -303,6 +387,8 @@ export default function Layout() {
                         <User className="w-4 h-4 text-brand" />
                         Mon compte
                       </Link>
+                      
+                      {/* Lien Admin (uniquement pour les admins) */}
                       {isAdmin && (
                         <Link
                           to="/admin"
@@ -313,7 +399,10 @@ export default function Layout() {
                           Administration
                         </Link>
                       )}
+                      
                       <div className="border-t border-gray-100 dark:border-dark-border my-1"></div>
+                      
+                      {/* Bouton Déconnexion */}
                       <button
                         onClick={() => {
                           signOut()
@@ -382,11 +471,37 @@ export default function Layout() {
                 <MailIcon className="w-4 h-4" />
                 {t('nav.contact')}
               </NavLink>
+              
               {!loading && user && isAdmin && (
                 <NavLink to="/admin" className={link} onClick={() => setIsMobileMenuOpen(false)}>
                   <Shield className="w-4 h-4" />
                   ⚡ Admin
                 </NavLink>
+              )}
+              
+              {/* Lien Mon compte dans le menu mobile */}
+              {user && (
+                <>
+                  <NavLink to="/account" className={link} onClick={() => setIsMobileMenuOpen(false)}>
+                    <User className="w-4 h-4" />
+                    Mon compte
+                  </NavLink>
+                  <div className="pt-2 mt-2 border-t border-gray-200 dark:border-dark-border">
+                    <div className="flex items-center gap-3 px-3 py-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand to-brand-dark text-white flex items-center justify-center font-semibold text-sm">
+                        {getInitials(getDisplayName())}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-800 dark:text-white truncate">
+                          {getDisplayName()}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
             </nav>
           </div>
@@ -398,9 +513,10 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* Footer avec mode sombre - version sans Facebook/Instagram */}
+      {/* ==================== FOOTER AVEC NEWSLETTER ==================== */}
       <footer className="bg-brand-dark dark:bg-slate-900 text-white mt-auto border-t border-white/10 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Section Newsletter */}
           <div className="py-8 border-b border-white/10 dark:border-white/5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
               <div>
@@ -412,19 +528,13 @@ export default function Layout() {
                   Recevez nos offres et actualités exclusives
                 </p>
               </div>
-              <div className="flex gap-3">
-                <input
-                  type="email"
-                  placeholder="Votre email"
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-brand-light/50 text-sm"
-                />
-                <button className="px-5 py-2.5 bg-brand-light hover:bg-white text-brand-dark font-medium rounded-xl transition text-sm whitespace-nowrap">
-                  S'abonner
-                </button>
+              <div className="max-w-md ml-auto w-full">
+                <Newsletter />
               </div>
             </div>
           </div>
 
+          {/* 4 colonnes du footer */}
           <div className="py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Colonne 1 - Brand */}
             <div>
@@ -442,46 +552,20 @@ export default function Layout() {
                 Circuits organisés, excursions, transferts et location de voiture.
               </p>
               <div className="mt-4 flex gap-3">
-                {/* Facebook - utilisant un SVG inline */}
-                <a 
-                  href="https://facebook.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-[#1877F2] flex items-center justify-center transition-all duration-300 hover:scale-110"
-                  aria-label="Facebook"
-                >
+                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-white/10 hover:bg-[#1877F2] flex items-center justify-center transition-all duration-300 hover:scale-110">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                   </svg>
                 </a>
-                {/* Instagram - utilisant un SVG inline */}
-                <a 
-                  href="https://instagram.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-gradient-to-br hover:from-[#E4405F] hover:to-[#F58529] flex items-center justify-center transition-all duration-300 hover:scale-110"
-                  aria-label="Instagram"
-                >
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-white/10 hover:bg-gradient-to-br hover:from-[#E4405F] hover:to-[#F58529] flex items-center justify-center transition-all duration-300 hover:scale-110">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
                   </svg>
                 </a>
-                <a 
-                  href="https://wa.me/261384639124" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-[#25D366] flex items-center justify-center transition-all duration-300 hover:scale-110"
-                  aria-label="WhatsApp"
-                >
+                <a href="https://wa.me/261384639124" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-white/10 hover:bg-[#25D366] flex items-center justify-center transition-all duration-300 hover:scale-110">
                   <MessageCircle className="w-4 h-4" />
                 </a>
-                <a 
-                  href="https://www.google.com/maps/dir//Antananarivo,+Madagascar" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-[#EA4335] flex items-center justify-center transition-all duration-300 hover:scale-110"
-                  aria-label="Google Maps"
-                >
+                <a href="https://www.google.com/maps/dir//Antananarivo,+Madagascar" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-white/10 hover:bg-[#EA4335] flex items-center justify-center transition-all duration-300 hover:scale-110">
                   <MapPin className="w-4 h-4" />
                 </a>
               </div>
@@ -563,6 +647,7 @@ export default function Layout() {
             </div>
           </div>
 
+          {/* Copyright */}
           <div className="border-t border-white/10 dark:border-white/5 py-6">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-sm text-white/40 dark:text-white/30">

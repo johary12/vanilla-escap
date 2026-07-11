@@ -13,6 +13,7 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Account from './pages/Account.jsx'
 import AuthCallback from './pages/AuthCallback.jsx'
+import BookingPage from './pages/BookingPage.jsx'
 
 // Layout admin
 import AdminLayout from './layouts/AdminLayout'
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/tours" element={<Tours />} />
         <Route path="/tours/:slug" element={<TourDetail />} />
         <Route path="/stays" element={<Stays />} />
+        <Route path="/booking/:id" element={<BookingPage />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />

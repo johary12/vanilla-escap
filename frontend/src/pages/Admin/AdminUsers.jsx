@@ -1,135 +1,185 @@
 // src/pages/admin/Users.jsx
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../components/ThemeProvider'
-import { 
-  Users, 
-  User, 
-  Mail, 
-  Shield, 
-  Trash2, 
-  Edit,
-  Search,
-  Loader2,
-  XCircle,
-  CheckCircle,
-  Calendar,
-  UserCog,
-  Crown,
-  UserCheck,
-  UserX
-} from 'lucide-react'
+import { Users, User, Crown, Loader2, RefreshCw, AlertCircle, Trash2, XCircle } from 'lucide-react'
 
 export default function AdminUsers() {
   const { theme } = useTheme()
+  const { user, loading: authLoading } = useAuth()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
-  const [roles, setRoles] = useState({})
-  const [searchTerm, setSearchTerm] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   const fetchUsers = async () => {
-    setLoading(true)
-    const { data: authUsers, error } = await supabase.auth.admin.listUsers()
-    
-    if (error) {
-      console.error('Erreur chargement utilisateurs:', error)
+    if (!user) {
+      setError('Vous devez être connecté')
       setLoading(false)
       return
     }
 
-    const { data: rolesData } = await supabase
-      .from('user_roles')
-      .select('*')
+    setLoading(true)
+    setError(null)
+    
+    try {
+      console.log('🔵 Récupération des utilisateurs...')
 
-    const rolesMap = {}
-    rolesData?.forEach(r => {
-      rolesMap[r.user_id] = r.role
-    })
-    setRoles(rolesMap)
+      // Récupérer les utilisateurs depuis la table users
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    const formattedUsers = authUsers.users.map(u => ({
-      id: u.id,
-      email: u.email,
-      full_name: u.user_metadata?.full_name || '',
-      created_at: u.created_at,
-      role: rolesMap[u.id] || 'user'
-    }))
+      if (usersError) {
+        console.error('🔴 Erreur table users:', usersError)
+        // Fallback: utiliser auth.users
+        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers()
+        if (authError) throw authError
+        
+        const { data: rolesData } = await supabase
+          .from('user_roles')
+          .select('*')
+        
+        const rolesMap = {}
+        rolesData?.forEach(r => {
+          rolesMap[r.user_id] = r.role
+        })
 
-    setUsers(formattedUsers)
-    setLoading(false)
+        const formattedUsers = authUsers.users.map(u => ({
+          id: u.id,
+          email: u.email || 'Email non défini',
+          full_name: u.user_metadata?.full_name || '—',
+          created_at: u.created_at || new Date().toISOString(),
+          role: rolesMap[u.id] || 'user'
+        }))
+        
+        setUsers(formattedUsers)
+        setLoading(false)
+        return
+      }
+
+      // Récupérer les rôles
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('*')
+
+      const rolesMap = {}
+      rolesData?.forEach(r => {
+        rolesMap[r.user_id] = r.role
+      })
+
+      const formattedUsers = (usersData || []).map(u => ({
+        id: u.id,
+        email: u.email || 'Email non défini',
+        full_name: u.full_name || '—',
+        created_at: u.created_at || new Date().toISOString(),
+        role: rolesMap[u.id] || 'user'
+      }))
+
+      console.log(`🟢 ${formattedUsers.length} utilisateurs chargés`)
+      setUsers(formattedUsers)
+      
+    } catch (error) {
+      console.error('🔴 Erreur:', error)
+      setError(error.message || 'Erreur lors du chargement')
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
-    fetchUsers()
-  }, [])
-
-  const openModal = (user) => {
-    setSelectedUser(user)
-    setShowModal(true)
-  }
-
-  const closeModal = () => {
-    setShowModal(false)
-    setSelectedUser(null)
-  }
-
-  const updateRole = async (userId, newRole) => {
-    setLoading(true)
-    
-    if (roles[userId]) {
-      const { error } = await supabase
-        .from('user_roles')
-        .update({ role: newRole })
-        .eq('user_id', userId)
-      if (!error) {
-        setRoles({ ...roles, [userId]: newRole })
-        fetchUsers()
-      }
-    } else {
-      const { error } = await supabase
-        .from('user_roles')
-        .insert([{ user_id: userId, role: newRole }])
-      if (!error) {
-        setRoles({ ...roles, [userId]: newRole })
-        fetchUsers()
-      }
+    if (!authLoading && user) {
+      fetchUsers()
+    } else if (!authLoading && !user) {
+      setLoading(false)
     }
-    setLoading(false)
-    closeModal()
-  }
+  }, [authLoading, user])
 
   const handleDelete = async () => {
-    setLoading(true)
-    const { error } = await supabase.auth.admin.deleteUser(selectedUser.id)
-    if (!error) {
-      await supabase
+    if (!selectedUser) return
+    
+    setDeleting(true)
+    try {
+      console.log(`🔵 Suppression de l'utilisateur: ${selectedUser.email}`)
+      
+      // 1. Supprimer l'utilisateur de auth.users
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(selectedUser.id)
+      
+      if (deleteError) {
+        console.error('🔴 Erreur suppression auth:', deleteError)
+        if (deleteError.status === 401) {
+          alert('Session expirée. Veuillez vous reconnecter.')
+          window.location.href = '/login'
+          return
+        }
+        throw deleteError
+      }
+
+      console.log('🟢 Utilisateur supprimé de auth.users')
+      
+      // 2. Supprimer le rôle de user_roles
+      const { error: roleError } = await supabase
         .from('user_roles')
         .delete()
         .eq('user_id', selectedUser.id)
-      fetchUsers()
-      closeModal()
+      
+      if (roleError) {
+        console.warn('⚠️ Erreur suppression rôle:', roleError)
+      } else {
+        console.log('🟢 Rôle supprimé de user_roles')
+      }
+
+      // 3. Supprimer le profil de users
+      const { error: profileError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', selectedUser.id)
+      
+      if (profileError) {
+        console.warn('⚠️ Erreur suppression profil:', profileError)
+      } else {
+        console.log('🟢 Profil supprimé de users')
+      }
+
+      // 4. Rafraîchir la liste
+      await fetchUsers()
+      setShowModal(false)
+      setSelectedUser(null)
+      
+    } catch (error) {
+      console.error('🔴 Erreur suppression:', error)
+      alert(`Erreur lors de la suppression: ${error.message}`)
+    } finally {
+      setDeleting(false)
     }
-    setLoading(false)
   }
 
-  const filteredUsers = users.filter(u => {
-    const search = searchTerm.toLowerCase()
-    return u.email?.toLowerCase().includes(search) ||
-           u.full_name?.toLowerCase().includes(search)
-  })
-
-  const stats = {
-    total: users.length,
-    admins: Object.values(roles).filter(r => r === 'admin').length,
-    users: Object.values(roles).filter(r => r === 'user' || !r).length
-  }
-
-  if (loading && users.length === 0) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-12 h-12 text-brand animate-spin" />
+        <p className={`ml-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+          Chargement...
+        </p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 p-6">
+        <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
+        <p className="text-red-500 font-medium text-lg text-center">{error}</p>
+        <button 
+          onClick={fetchUsers}
+          className="mt-4 px-6 py-2 bg-brand text-white rounded-lg hover:bg-brand-dark transition"
+        >
+          Réessayer
+        </button>
       </div>
     )
   }
@@ -143,79 +193,85 @@ export default function AdminUsers() {
             Utilisateurs
           </h2>
           <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
-            Gérez les utilisateurs et leurs rôles
+            Liste de tous les utilisateurs
           </p>
         </div>
-        <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-          Total: <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{users.length}</span>
+        <div className="flex items-center gap-3">
+          <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+            Total: <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{users.length}</span>
+          </span>
+          <button
+            onClick={fetchUsers}
+            className={`p-2.5 rounded-xl transition flex items-center gap-2 ${
+              theme === 'dark' 
+                ? 'bg-dark-card hover:bg-gray-800 text-gray-300' 
+                : 'bg-white hover:bg-gray-50 text-gray-600 shadow-sm'
+            }`}
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span className="text-sm hidden sm:inline">Rafraîchir</span>
+          </button>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className={`p-4 rounded-xl shadow-sm transition-colors duration-300 ${theme === 'dark' ? 'bg-dark-card' : 'bg-white'}`}>
+        <div className={`p-4 rounded-xl shadow-sm ${theme === 'dark' ? 'bg-dark-card' : 'bg-white'}`}>
           <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>Total</p>
-          <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{stats.total}</p>
+          <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{users.length}</p>
         </div>
-        <div className={`p-4 rounded-xl shadow-sm transition-colors duration-300 ${theme === 'dark' ? 'bg-dark-card' : 'bg-white'}`}>
+        <div className={`p-4 rounded-xl shadow-sm ${theme === 'dark' ? 'bg-dark-card' : 'bg-white'}`}>
           <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>Admins</p>
           <p className="text-2xl font-bold text-brand flex items-center gap-1">
             <Crown className="w-5 h-5" />
-            {stats.admins}
+            {users.filter(u => u.role === 'admin').length}
           </p>
         </div>
-        <div className={`p-4 rounded-xl shadow-sm transition-colors duration-300 ${theme === 'dark' ? 'bg-dark-card' : 'bg-white'}`}>
+        <div className={`p-4 rounded-xl shadow-sm ${theme === 'dark' ? 'bg-dark-card' : 'bg-white'}`}>
           <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>Utilisateurs</p>
-          <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.users}</p>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="mb-6">
-        <div className="relative max-w-md">
-          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
-          <input
-            type="text"
-            placeholder="Rechercher un utilisateur..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full pl-10 pr-4 py-2.5 rounded-xl border transition-colors duration-300 ${
-              theme === 'dark'
-                ? 'bg-dark-card border-dark-border text-white placeholder-gray-500'
-                : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'
-            } focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand`}
-          />
+          <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+            {users.filter(u => u.role === 'user').length}
+          </p>
         </div>
       </div>
 
       {/* Table */}
-      <div className={`rounded-xl shadow-sm overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-dark-card' : 'bg-white'}`}>
-        {filteredUsers.length === 0 ? (
+      <div className={`rounded-xl shadow-sm overflow-hidden ${theme === 'dark' ? 'bg-dark-card' : 'bg-white'}`}>
+        {users.length === 0 ? (
           <div className="text-center py-12">
             <Users className={`w-16 h-16 mx-auto mb-4 ${theme === 'dark' ? 'text-gray-600' : 'text-gray-300'}`} />
-            <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>Aucun utilisateur</p>
+            <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>Aucun utilisateur trouvé</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className={theme === 'dark' ? 'bg-gray-800/50' : 'bg-gray-50'}>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Utilisateur</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Rôle</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Inscrit le</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">
+                    Utilisateur
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">
+                    Email
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">
+                    Rôle
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-dark-border">
-                {filteredUsers.map((u) => (
+                {users.map((u) => (
                   <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
                     <td className="px-4 py-3">
                       <div className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                        {u.full_name || '-'}
+                        {u.full_name || '—'}
                       </div>
                     </td>
-                    <td className={`px-4 py-3 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{u.email}</td>
+                    <td className={`px-4 py-3 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {u.email}
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${
                         u.role === 'admin' 
@@ -223,31 +279,24 @@ export default function AdminUsers() {
                           : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                       }`}>
                         {u.role === 'admin' ? <Crown className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                        {u.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                        {u.role === 'admin' ? 'Admin' : 'Utilisateur'}
                       </span>
                     </td>
-                    <td className={`px-4 py-3 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {new Date(u.created_at).toLocaleDateString('fr-FR')}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-2">
+                    <td className="px-4 py-3 text-center">
+                      {u.email !== 'admin@vanilla-escape.com' ? (
                         <button
-                          onClick={() => openModal(u)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition"
-                          title="Gérer"
+                          onClick={() => {
+                            setSelectedUser(u)
+                            setShowModal(true)
+                          }}
+                          className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                          title="Supprimer"
                         >
-                          <UserCog className="w-5 h-5" />
+                          <Trash2 className="w-5 h-5" />
                         </button>
-                        {u.email !== 'admin@vanilla-escape.com' && (
-                          <button
-                            onClick={() => { setSelectedUser(u); setShowModal(true); }}
-                            className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
-                            title="Supprimer"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        )}
-                      </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">Admin principal</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -257,52 +306,73 @@ export default function AdminUsers() {
         )}
       </div>
 
-      {/* Modal Gérer utilisateur */}
+      {/* Modal Supprimer */}
       {showModal && selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className={`rounded-xl shadow-2xl max-w-md w-full transition-colors duration-300 ${theme === 'dark' ? 'bg-dark-card' : 'bg-white'}`}>
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-                  <UserCog className="inline-block w-5 h-5 mr-2 text-brand" />
-                  Gérer l'utilisateur
+                  <Trash2 className="inline-block w-5 h-5 mr-2 text-red-500" />
+                  Supprimer l'utilisateur
                 </h3>
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
                   <XCircle className="w-6 h-6" />
                 </button>
               </div>
+              
               <div className="space-y-4">
-                <div><span className="font-medium">Nom:</span> {selectedUser.full_name || '-'}</div>
-                <div><span className="font-medium">Email:</span> {selectedUser.email}</div>
-                <div><span className="font-medium">Rôle actuel:</span> {selectedUser.role === 'admin' ? 'Administrateur' : 'Utilisateur'}</div>
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Changer le rôle</label>
-                  <select
-                    defaultValue={selectedUser.role || 'user'}
-                    onChange={(e) => updateRole(selectedUser.id, e.target.value)}
-                    className={`w-full border rounded-lg px-3 py-2 transition-colors duration-300 ${
-                      theme === 'dark' ? 'bg-gray-800 border-dark-border text-white' : 'bg-white border-gray-300 text-gray-800'
-                    } focus:ring-2 focus:ring-brand focus:border-brand`}
-                  >
-                    <option value="user">Utilisateur</option>
-                    <option value="admin">Administrateur</option>
-                  </select>
+                <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>
+                  Êtes-vous sûr de vouloir supprimer l'utilisateur ?
+                </p>
+                <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                  <p className="font-medium">{selectedUser.full_name || 'Sans nom'}</p>
+                  <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {selectedUser.email}
+                  </p>
+                  <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                    Rôle: {selectedUser.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                  </p>
                 </div>
+                <p className={`text-sm ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
+                  ⚠️ Cette action est irréversible. Toutes les données de l'utilisateur seront supprimées.
+                </p>
               </div>
-              <div className="flex justify-end gap-3 mt-4 pt-4 border-t dark:border-dark-border">
-                <button onClick={closeModal} className="px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 rounded-lg transition">
-                  Fermer
+
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t dark:border-dark-border">
+                <button 
+                  onClick={() => setShowModal(false)} 
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 rounded-lg transition"
+                  disabled={deleting}
+                >
+                  Annuler
                 </button>
-                {selectedUser.email !== 'admin@vanilla-escape.com' && (
-                  <button onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-                    Supprimer
-                  </button>
-                )}
+                <button 
+                  onClick={handleDelete} 
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2 disabled:opacity-50"
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Suppression...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      Supprimer
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      <div className={`mt-4 text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+        <p>ℹ️ {users.length} utilisateur{users.length > 1 ? 's' : ''}</p>
+      </div>
     </div>
   )
 }

@@ -34,12 +34,45 @@ export default function Login() {
           nav('/account')
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword(f)
-        if (error) throw new Error(error.message)
-        nav('/account')
+        // Vérifier que les champs ne sont pas vides
+        if (!f.email || !f.password) {
+          throw new Error('Veuillez remplir tous les champs')
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: f.email.trim(),
+          password: f.password
+        })
+        
+        if (error) {
+          // Gérer les différents types d'erreurs
+          if (error.message.includes('Invalid login credentials')) {
+            throw new Error('Email ou mot de passe incorrect')
+          } else if (error.message.includes('Email not confirmed')) {
+            throw new Error('Veuillez confirmer votre email avant de vous connecter')
+          } else {
+            throw new Error(error.message)
+          }
+        }
+        
+        if (data?.user) {
+          // Vérifier que l'utilisateur a bien un rôle
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', data.user.id)
+            .maybeSingle()
+
+          if (roleError) {
+            console.warn('Erreur lors de la récupération du rôle:', roleError)
+          }
+
+          nav('/account')
+        }
       }
     } catch (error) {
       setErr(error.message || 'Erreur de connexion')
+      console.error('Erreur de connexion:', error)
     } finally {
       setLoading(false)
     }
@@ -54,7 +87,7 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/account`,
+          redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -69,24 +102,36 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-gray-50 dark:bg-dark-bg transition-colors duration-300">
-      <div className="bg-white dark:bg-dark-card p-8 rounded-2xl shadow-xl dark:shadow-2xl dark:shadow-black/30 max-w-md w-full transition-colors duration-300 border border-gray-100 dark:border-dark-border">
+    <div className={`min-h-[80vh] flex items-center justify-center px-4 py-12 transition-colors duration-300 ${
+      theme === 'dark' ? 'bg-dark-bg' : 'bg-gray-50'
+    }`}>
+      <div className={`w-full max-w-md rounded-2xl shadow-xl p-8 transition-colors duration-300 ${
+        theme === 'dark' ? 'bg-dark-card shadow-2xl shadow-black/30' : 'bg-white'
+      }`}>
         {/* En-tête */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand to-brand-dark text-white text-3xl mb-4 shadow-lg">
             🔐
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+          <h1 className={`text-3xl font-bold ${
+            theme === 'dark' ? 'text-white' : 'text-gray-800'
+          }`}>
             {t('auth.login')}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2">
+          <p className={`mt-2 ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+          }`}>
             Connectez-vous à votre compte
           </p>
         </div>
 
         {/* Erreur */}
         {err && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl mb-6 flex items-center gap-3">
+          <div className={`mb-6 p-4 rounded-xl flex items-start gap-3 border ${
+            theme === 'dark' 
+              ? 'bg-red-900/20 border-red-800 text-red-400' 
+              : 'bg-red-50 border-red-200 text-red-600'
+          }`}>
             <span className="text-xl">❌</span>
             <span className="text-sm">{err}</span>
           </div>
@@ -95,40 +140,58 @@ export default function Login() {
         {/* Formulaire */}
         <form onSubmit={submit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className={`block text-sm font-medium mb-1.5 ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+            }`}>
               {t('auth.email')}
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
+                theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+              }`} />
               <input
                 required
                 type="email"
                 placeholder="votre@email.com"
                 value={f.email}
                 onChange={e => setF({ ...f, email: e.target.value })}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-brand focus:border-brand dark:focus:border-brand-light text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition"
+                className={`w-full pl-10 pr-4 py-3 rounded-xl border transition-colors duration-300 ${
+                  theme === 'dark'
+                    ? 'bg-gray-800/50 border-dark-border text-white placeholder-gray-500'
+                    : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'
+                } focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand`}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className={`block text-sm font-medium mb-1.5 ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+            }`}>
               {t('auth.password')}
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
+                theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+              }`} />
               <input
                 required
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={f.password}
                 onChange={e => setF({ ...f, password: e.target.value })}
-                className="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-brand focus:border-brand dark:focus:border-brand-light text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition"
+                className={`w-full pl-10 pr-12 py-3 rounded-xl border transition-colors duration-300 ${
+                  theme === 'dark'
+                    ? 'bg-gray-800/50 border-dark-border text-white placeholder-gray-500'
+                    : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'
+                } focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition"
+                className={`absolute right-3 top-1/2 transform -translate-y-1/2 transition-colors ${
+                  theme === 'dark' ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                }`}
               >
                 {showPassword ? (
                   <EyeOff className="w-5 h-5" />
@@ -142,11 +205,13 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-brand to-brand-dark hover:shadow-lg text-white font-medium py-3 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className={`w-full bg-gradient-to-r from-brand to-brand-dark hover:shadow-lg text-white font-medium py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+              theme === 'dark' ? 'shadow-black/30' : 'shadow-lg'
+            }`}
           >
             {loading ? (
               <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -163,16 +228,24 @@ export default function Login() {
 
         {/* Séparateur */}
         <div className="flex items-center my-6">
-          <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
-          <span className="px-4 text-sm text-gray-400 dark:text-gray-500">ou</span>
-          <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+          <div className={`flex-1 border-t ${
+            theme === 'dark' ? 'border-gray-700' : 'border-gray-300'
+          }`}></div>
+          <span className={`px-4 text-sm ${
+            theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+          }`}>ou</span>
+          <div className={`flex-1 border-t ${
+            theme === 'dark' ? 'border-gray-700' : 'border-gray-300'
+          }`}></div>
         </div>
 
         {/* Bouton Google */}
         <button
           onClick={signInWithGoogle}
           disabled={googleLoading}
-          className="w-full flex items-center justify-center gap-3 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium py-3 rounded-xl transition-all duration-300 disabled:opacity-50"
+          className={`w-full flex items-center justify-center gap-3 border ${
+            theme === 'dark' ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'
+          } text-gray-700 dark:text-gray-300 font-medium py-3 rounded-xl transition-all duration-300 disabled:opacity-50`}
         >
           {googleLoading ? (
             <svg className="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -192,13 +265,17 @@ export default function Login() {
 
         {/* Liens */}
         <div className="text-center mt-6 space-y-2">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className={`text-sm ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          }`}>
             Pas encore de compte ?{' '}
             <Link to="/register" className="text-brand dark:text-brand-light font-medium hover:underline">
               S'inscrire
             </Link>
           </p>
-          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition">
+          <Link to="/" className={`inline-flex items-center gap-1.5 text-sm transition-colors ${
+            theme === 'dark' ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+          }`}>
             <ArrowLeft className="w-4 h-4" />
             Retour à l'accueil
           </Link>

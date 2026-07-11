@@ -1,7 +1,7 @@
 // src/pages/Stays.jsx
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'  // ← AJOUT IMPORTANT
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useTheme } from '../components/ThemeProvider'
 import { 
@@ -147,7 +147,6 @@ export default function Stays() {
   }
 
   const getAmenities = (item) => {
-    // Simuler des équipements - à adapter selon votre structure de données
     const amenities = ['wifi', 'breakfast', 'parking']
     if (item.price_per_night > 100) amenities.push('restaurant', 'pool')
     if (item.price_per_night > 200) amenities.push('gym')
@@ -384,25 +383,14 @@ export default function Stays() {
                       })}
                     </div>
                     
-                    {/* Bouton réserver */}
-                    {item.external_booking_url ? (
-                      <a
-                        href={item.external_booking_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-brand hover:bg-brand-dark text-white px-4 py-2 rounded-xl font-medium transition-all hover:shadow-lg w-full justify-center group"
-                      >
-                        Réserver maintenant
-                        <ExternalLink className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </a>
-                    ) : (
-                      <button
-                        className="inline-flex items-center gap-2 bg-brand/10 text-brand dark:text-brand-light px-4 py-2 rounded-xl font-medium transition-all hover:bg-brand/20 w-full justify-center"
-                      >
-                        <DollarSign className="w-4 h-4" />
-                        Voir les disponibilités
-                      </button>
-                    )}
+                    {/* ==================== BOUTON RÉSERVER ==================== */}
+                    <Link
+                      to={`/booking/${item.id}`}
+                      className="inline-flex items-center gap-2 bg-brand hover:bg-brand-dark text-white px-4 py-2 rounded-xl font-medium transition-all hover:shadow-lg w-full justify-center group"
+                    >
+                      <Bed className="w-4 h-4" />
+                      Réserver maintenant
+                    </Link>
                   </div>
                 </div>
               )
